@@ -117,8 +117,14 @@ ${planningContext}`,
       : getBaseGenerationConfig();
 
     let finalText = "";
+    let toolIterations = 0;
+    const maxToolIterations = 5;
 
     while (true) {
+      if (toolIterations > maxToolIterations) {
+        throw new Error("Agent exceeded maximum tool call iterations.");
+      }
+
       const response = await gemini.models.generateContent({
         model: config.GEMINI_MODEL,
         contents,
@@ -133,6 +139,8 @@ ${planningContext}`,
         if (!functionCall.name) {
           throw new Error("Gemini returned a function call without a name.");
         }
+
+        toolIterations++;
 
         const toolResult = await executeFunctionCall({
           id: functionCall.id,
@@ -294,8 +302,14 @@ ${planningContext}`,
       : getBaseGenerationConfig();
 
     let finalText = "";
+    let toolIterations = 0;
+    const maxToolIterations = 5;
 
     while (true) {
+      if (toolIterations > maxToolIterations) {
+        throw new Error("Agent exceeded maximum tool call iterations.");
+      }
+
       await onEvent({
         type: "status",
         phase: "generating",
@@ -318,6 +332,8 @@ ${planningContext}`,
         if (!functionCall.name) {
           throw new Error("Gemini returned a function call without a name.");
         }
+
+        toolIterations++;
 
         await onEvent({
           type: "status",
