@@ -47,6 +47,22 @@ function sendServerError(res: express.Response, message: string): void {
   });
 }
 
+function classifyApiError(error: unknown): string {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (
+    message.includes("429") ||
+    message.includes("rate limit") ||
+    message.includes("quota") ||
+    message.includes("resource exhausted") ||
+    message.includes("too many requests")
+  ) {
+    return "The model is currently busy. Please wait a moment and try again.";
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
 function writeSseEvent(
   res: express.Response,
   event: string,
@@ -157,7 +173,7 @@ app.get("/api/chat/stream", async (req, res) => {
     console.error("Streaming chat endpoint error:", error);
 
     writeSseEvent(res, "error", {
-      message: "Failed to generate agent response.",
+      message: classifyApiError(error),
     });
   } finally {
     clearInterval(keepAlive);

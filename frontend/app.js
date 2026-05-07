@@ -168,7 +168,16 @@ async function sendMessage(text) {
 
   eventSource.addEventListener("error", (event) => {
     console.error("SSE error:", event);
-    showError(agentContainer, "Streaming connection failed.");
+    let message = "Streaming connection failed.";
+    if (event.data) {
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed.message) message = parsed.message;
+      } catch {
+        // keep default message
+      }
+    }
+    showError(agentContainer, message);
     closeCurrentStream();
     setLoadingState(false);
   });
