@@ -391,6 +391,22 @@ header {
   color: #ff8a8a;
 }
 
+.tool-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tool-log-item {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  background: var(--bg-tertiary);
+  border-left: 2px solid var(--accent-purple);
+  border-radius: 4px;
+}
+
 footer {
   flex-shrink: 0;
   border-top: 1px solid var(--border);
