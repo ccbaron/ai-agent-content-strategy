@@ -91,10 +91,14 @@ function appendAgentChunk(container, text) {
 function showError(container, message) {
   const statusEl = container.querySelector(".status");
   const textEl = container.querySelector(".text-content");
+  const originalMessage = container.dataset.userMessage;
 
   statusEl.style.display = "none";
   textEl.style.display = "block";
-  textEl.innerHTML = `<p class="error-text">Error: ${escapeHtml(message)}</p>`;
+  textEl.innerHTML = `
+    <p class="error-text">${escapeHtml(message)}</p>
+    ${originalMessage ? `<button class="retry-button" data-retry="${escapeHtml(originalMessage)}">Try again</button>` : ""}
+  `;
 
   scrollToBottom();
 }
@@ -138,6 +142,7 @@ async function sendMessage(text) {
   setLoadingState(true);
 
   const agentContainer = createAgentContainer();
+  agentContainer.dataset.userMessage = text;
 
   closeCurrentStream();
 
@@ -200,10 +205,15 @@ messageInput.addEventListener("input", autoResizeTextarea);
 
 document.addEventListener("click", async (event) => {
   const suggestion = event.target.closest("[data-suggestion]");
-  if (!suggestion) return;
+  if (suggestion) {
+    await sendMessage(suggestion.textContent.trim());
+    return;
+  }
 
-  const text = suggestion.textContent.trim();
-  await sendMessage(text);
+  const retry = event.target.closest("[data-retry]");
+  if (retry) {
+    await sendMessage(retry.dataset.retry);
+  }
 });
 
 resetButton.addEventListener("click", async () => {
