@@ -17,8 +17,11 @@
     "llm",
     "portfolio"
   ],
-  "author": "",
+  "author": "Christian Baron <ccbaron>",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@google/genai": "^1.48.0",
     "@tavily/core": "^0.7.2",

@@ -12,10 +12,6 @@ const agent = new ContentIntelligenceAgent();
 
 const frontendDir = join(process.cwd(), "frontend");
 
-const chatBodySchema = z.object({
-  message: z.string().trim().min(1, "Message is required.").max(4000),
-});
-
 const streamQuerySchema = z.object({
   message: z.string().trim().min(1, "Message is required.").max(4000),
 });
@@ -38,12 +34,6 @@ function sendBadRequest(
   res.status(400).json({
     error: message,
     ...(details ? { details } : {}),
-  });
-}
-
-function sendServerError(res: express.Response, message: string): void {
-  res.status(500).json({
-    error: message,
   });
 }
 
@@ -80,7 +70,6 @@ app.use(
   }),
 );
 app.use(cors());
-app.use(express.json({ limit: "20kb" }));
 app.use("/api", apiLimiter);
 app.use(express.static(frontendDir));
 
@@ -95,26 +84,6 @@ app.get("/api/health", (_req, res) => {
     model: config.GEMINI_MODEL,
     mode: config.APP_MODE,
   });
-});
-
-app.post("/api/chat", async (req, res) => {
-  try {
-    const parsed = chatBodySchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      sendBadRequest(res, "Invalid request body.", parsed.error.flatten());
-      return;
-    }
-
-    const response = await agent.reply(parsed.data.message);
-
-    res.json({
-      message: response,
-    });
-  } catch (error) {
-    console.error("Chat endpoint error:", error);
-    sendServerError(res, "Failed to generate agent response.");
-  }
 });
 
 app.get("/api/chat/stream", async (req, res) => {
