@@ -41,6 +41,25 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function requiresInternalContext(userMessage: string): boolean {
+  const normalized = userMessage.toLowerCase();
+
+  const internalContextSignals = [
+    "our positioning",
+    "our brand",
+    "our tone",
+    "our strategy",
+    "our messaging",
+    "our audience",
+    "our voice",
+    "brand voice",
+    "tone of voice",
+    "internal knowledge",
+  ];
+
+  return internalContextSignals.some((signal) => normalized.includes(signal));
+}
+
 export class ContentIntelligenceAgent {
   private conversationHistory: ConversationMessage[];
 
@@ -61,7 +80,8 @@ Preferred output format: ${taskPlan.outputFormat}
     const shouldEnableTools =
       taskPlan.shouldResearch ||
       taskPlan.taskType === "comparison" ||
-      taskPlan.taskType === "research";
+      taskPlan.taskType === "research" ||
+      requiresInternalContext(userMessage);
 
     const recentHistory = this.conversationHistory.slice(
       -config.MAX_CONVERSATION_MESSAGES,
@@ -97,8 +117,14 @@ ${planningContext}`,
       : getBaseGenerationConfig();
 
     let finalText = "";
+    let toolIterations = 0;
+    const maxToolIterations = 5;
 
     while (true) {
+      if (toolIterations > maxToolIterations) {
+        throw new Error("Agent exceeded maximum tool call iterations.");
+      }
+
       const response = await gemini.models.generateContent({
         model: config.GEMINI_MODEL,
         contents,
@@ -113,6 +139,8 @@ ${planningContext}`,
         if (!functionCall.name) {
           throw new Error("Gemini returned a function call without a name.");
         }
+
+        toolIterations++;
 
         const toolResult = await executeFunctionCall({
           id: functionCall.id,
@@ -237,7 +265,8 @@ Preferred output format: ${taskPlan.outputFormat}
     const shouldEnableTools =
       taskPlan.shouldResearch ||
       taskPlan.taskType === "comparison" ||
-      taskPlan.taskType === "research";
+      taskPlan.taskType === "research" ||
+      requiresInternalContext(userMessage);
 
     const recentHistory = this.conversationHistory.slice(
       -config.MAX_CONVERSATION_MESSAGES,
@@ -273,8 +302,14 @@ ${planningContext}`,
       : getBaseGenerationConfig();
 
     let finalText = "";
+    let toolIterations = 0;
+    const maxToolIterations = 5;
 
     while (true) {
+      if (toolIterations > maxToolIterations) {
+        throw new Error("Agent exceeded maximum tool call iterations.");
+      }
+
       await onEvent({
         type: "status",
         phase: "generating",
@@ -297,6 +332,8 @@ ${planningContext}`,
         if (!functionCall.name) {
           throw new Error("Gemini returned a function call without a name.");
         }
+
+        toolIterations++;
 
         await onEvent({
           type: "status",
@@ -404,7 +441,6 @@ Please produce a stronger final answer that better satisfies the request.
       }
     }
 
-    // Stream incremental chunks to the UI
     const chunkSize = 24;
     for (let index = 0; index < assistantMessage.length; index += chunkSize) {
       const chunk = assistantMessage.slice(index, index + chunkSize);

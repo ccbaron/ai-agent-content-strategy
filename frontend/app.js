@@ -91,10 +91,14 @@ function appendAgentChunk(container, text) {
 function showError(container, message) {
   const statusEl = container.querySelector(".status");
   const textEl = container.querySelector(".text-content");
+  const originalMessage = container.dataset.userMessage;
 
   statusEl.style.display = "none";
   textEl.style.display = "block";
-  textEl.innerHTML = `<p class="error-text">Error: ${escapeHtml(message)}</p>`;
+  textEl.innerHTML = `
+    <p class="error-text">${escapeHtml(message)}</p>
+    ${originalMessage ? `<button class="retry-button" data-retry="${escapeHtml(originalMessage)}">Try again</button>` : ""}
+  `;
 
   scrollToBottom();
 }
@@ -106,7 +110,7 @@ function renderBasicMarkdown(text) {
   html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
   html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
   html = html.replace(/^\- (.*)$/gm, "<li>$1</li>");
-  html = html.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
+  html = html.replace(/(<li>[^]*?<\/li>)(\s*<li>[^]*?<\/li>)*/g, "<ul>$&</ul>");
   html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\n\n/g, "</p><p>");
   html = `<p>${html}</p>`;
@@ -138,6 +142,7 @@ async function sendMessage(text) {
   setLoadingState(true);
 
   const agentContainer = createAgentContainer();
+  agentContainer.dataset.userMessage = text;
 
   closeCurrentStream();
 
@@ -168,7 +173,16 @@ async function sendMessage(text) {
 
   eventSource.addEventListener("error", (event) => {
     console.error("SSE error:", event);
-    showError(agentContainer, "Streaming connection failed.");
+    let message = "Streaming connection failed.";
+    if (event.data) {
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed.message) message = parsed.message;
+      } catch {
+        // keep default message
+      }
+    }
+    showError(agentContainer, message);
     closeCurrentStream();
     setLoadingState(false);
   });
@@ -191,10 +205,15 @@ messageInput.addEventListener("input", autoResizeTextarea);
 
 document.addEventListener("click", async (event) => {
   const suggestion = event.target.closest("[data-suggestion]");
-  if (!suggestion) return;
+  if (suggestion) {
+    await sendMessage(suggestion.textContent.trim());
+    return;
+  }
 
-  const text = suggestion.textContent.trim();
-  await sendMessage(text);
+  const retry = event.target.closest("[data-retry]");
+  if (retry) {
+    await sendMessage(retry.dataset.retry);
+  }
 });
 
 resetButton.addEventListener("click", async () => {

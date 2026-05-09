@@ -391,6 +391,40 @@ header {
   color: #ff8a8a;
 }
 
+.retry-button {
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: 0.2s ease;
+}
+
+.retry-button:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.tool-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tool-log-item {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  background: var(--bg-tertiary);
+  border-left: 2px solid var(--accent-purple);
+  border-radius: 4px;
+}
+
 footer {
   flex-shrink: 0;
   border-top: 1px solid var(--border);
